@@ -22,6 +22,9 @@
     <ClCompile Include="과제2 %28CAS Lock%29.cpp">
       <Filter>과제</Filter>
     </ClCompile>
+    <ClCompile Include="과제3 (SET).cpp">
+      <Filter>과제</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="실습">
