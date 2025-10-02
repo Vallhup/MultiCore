@@ -43,9 +43,9 @@ public:
 
 	bool add(int v)
 	{
-		mtx.lock();
-
 		auto prev = head;
+
+		mtx.lock();
 		auto curr = prev->next;
 
 		while (curr->value < v) {
@@ -70,9 +70,9 @@ public:
 
 	bool remove(int v)
 	{
-		mtx.lock();
-
 		auto prev = head;
+
+		mtx.lock();
 		auto curr = prev->next;
 
 		while (curr->value < v) {
@@ -82,9 +82,9 @@ public:
 
 		if (curr->value == v) {
 			prev->next = curr->next;
-			delete curr;
-
 			mtx.unlock();
+
+			delete curr;
 			return true;
 		}
 
@@ -96,10 +96,9 @@ public:
 
 	bool contains(int v)
 	{
-		mtx.lock();
-
 		auto curr = head;
 
+		mtx.lock();
 		while (curr->value < v) {
 			curr = curr->next;
 		}
