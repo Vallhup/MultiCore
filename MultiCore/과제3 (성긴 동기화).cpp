@@ -152,7 +152,8 @@ int main()
 {
 	using namespace std::chrono;
 
-	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
+	// 첫 Loop에서 new / delete overhead 때문에 제대로 된 성능 측정이 되지 않는다
+	for (int num_threads = MAX_THREADS; num_threads >= 1; num_threads /= 2) {
 		set.clear();
 		std::vector<std::thread> workers;
 

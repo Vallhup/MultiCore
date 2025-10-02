@@ -22,8 +22,14 @@
     <ClCompile Include="과제2 %28CAS Lock%29.cpp">
       <Filter>과제</Filter>
     </ClCompile>
-    <ClCompile Include="과제3 %28성긴동기화%29.cpp">
+    <ClCompile Include="과제3 %28성긴 동기화%29.cpp">
       <Filter>과제</Filter>
+    </ClCompile>
+    <ClCompile Include="세밀한 동기화.cpp">
+      <Filter>실습\List</Filter>
+    </ClCompile>
+    <ClCompile Include="낙천적 동기화.cpp">
+      <Filter>실습\List</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +38,9 @@
     </Filter>
     <Filter Include="과제">
       <UniqueIdentifier>{08784188-ad41-438a-8378-595bbd419981}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="실습\List">
+      <UniqueIdentifier>{fcaac70f-717a-4634-88a0-32ba50a7d4bd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
