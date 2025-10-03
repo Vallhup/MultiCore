@@ -18,16 +18,16 @@ public:
 	void unlock() { mtx.unlock(); }
 };
 
-class F_SET {
+class O_SET {
 public:
-	F_SET()
+	O_SET()
 	{
 		head = new NODE(std::numeric_limits<int>::min());
 		tail = new NODE(std::numeric_limits<int>::max());
 		head->next = tail;
 	}
 
-	~F_SET()
+	~O_SET()
 	{
 		clear();
 		delete head;
@@ -48,98 +48,112 @@ public:
 
 	bool add(int v)
 	{
-		auto prev = head;
-		prev->lock();
+		while(true) {
+			auto prev = head;
+			auto curr = prev->next;
 
-		auto curr = prev->next;
-		curr->lock();
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
 
-		while (curr->value < v) {
-			prev->unlock();
-			prev = curr;
-			curr = curr->next;
+			prev->lock();
 			curr->lock();
-		}
+			if (false == validate(v, prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
 
-		if (curr->value == v) {
-			prev->unlock();
-			curr->unlock();
+			if (curr->value == v) {
+				prev->unlock();
+				curr->unlock();
 
-			return false;
-		}
+				return false;
+			}
 
-		else {
-			auto newNode = new NODE(v);
-			newNode->next = curr;
-			prev->next = newNode;
+			else {
+				auto newNode = new NODE(v);
+				newNode->next = curr;
+				prev->next = newNode;
 
-			prev->unlock();
-			curr->unlock();
+				prev->unlock();
+				curr->unlock();
 
-			return true;
+				return true;
+			}
 		}
 	}
 
 	bool remove(int v)
 	{
-		auto prev = head;
-		prev->lock();
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
 
-		auto curr = prev->next;
-		curr->lock();
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
 
-		while (curr->value < v) {
-			prev->unlock();
-			prev = curr;
-			curr = curr->next;
+			prev->lock();
 			curr->lock();
-		}
+			if (false == validate(v, prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
 
-		if (curr->value == v) {
-			prev->next = curr->next;
+			if (curr->value == v) {
+				prev->next = curr->next;
 
-			prev->unlock();
-			curr->unlock();
+				prev->unlock();
+				curr->unlock();
 
-			delete curr;
-			return true;
-		}
+				return true;
+			}
 
-		else {
-			prev->unlock();
-			curr->unlock();
+			else {
+				prev->unlock();
+				curr->unlock();
 
-			return false;
+				return false;
+			}
 		}
 	}
 
 	bool contains(int v)
 	{
-		auto prev = head;
-		prev->lock();
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
 
-		auto curr = prev->next;
-		curr->lock();
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
 
-		while (curr->value < v) {
-			prev->unlock();
-			prev = curr;
-			curr = curr->next;
+			prev->lock();
 			curr->lock();
-		}
+			if (false == validate(v, prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
 
-		if (curr->value == v) {
-			prev->unlock();
-			curr->unlock();
+			if (curr->value == v) {
+				prev->unlock();
+				curr->unlock();
 
-			return true;
-		}
+				return true;
+			}
 
-		else {
-			prev->unlock();
-			curr->unlock();
+			else {
+				prev->unlock();
+				curr->unlock();
 
-			return false;
+				return false;
+			}
 		}
 	}
 
@@ -155,11 +169,39 @@ public:
 	}
 
 private:
+	bool validate(int v, NODE* p, NODE* c)
+	{
+		auto prev = head;
+		auto curr = prev->next;
+
+		while (curr->value < v) {
+			prev = curr;
+			curr = curr->next;
+		}
+			
+		return ((prev == p) && (curr == c));
+
+		/*{
+			NODE* node = head;
+
+			while (node->value <= p->value) {
+				if(node == p){
+					return p->next = c;
+				}
+
+				node = node->next;
+			}
+
+			return false;
+		}*/
+	}
+
+private:
 	NODE* head;
 	NODE* tail;
 };
 
-F_SET set;
+O_SET set;
 
 void benchmark(const int num_threads)
 {
@@ -180,7 +222,7 @@ int main()
 {
 	using namespace std::chrono;
 
-	for (int num_threads = MAX_THREADS; num_threads >= 1; num_threads /= 2) {
+	for (int num_threads = 1; num_threads <= MAX_THREADS; num_threads *= 2) {
 		set.clear();
 		std::vector<std::thread> workers;
 

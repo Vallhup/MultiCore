@@ -1,46 +1,49 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="1억 만들기.cpp">
-      <Filter>실습</Filter>
-    </ClCompile>
-    <ClCompile Include="메모리 일관성.cpp">
-      <Filter>실습</Filter>
-    </ClCompile>
-    <ClCompile Include="메모리 일관성2.cpp">
-      <Filter>실습</Filter>
-    </ClCompile>
-    <ClCompile Include="컴파일러.cpp">
-      <Filter>실습</Filter>
-    </ClCompile>
-    <ClCompile Include="과제1 (빵집 알고리즘).cpp">
-      <Filter>과제</Filter>
-    </ClCompile>
-    <ClCompile Include="피터슨 알고리즘.cpp">
-      <Filter>실습</Filter>
-    </ClCompile>
-    <ClCompile Include="과제2 %28CAS Lock%29.cpp">
-      <Filter>과제</Filter>
-    </ClCompile>
-    <ClCompile Include="과제3 %28성긴 동기화%29.cpp">
-      <Filter>과제</Filter>
-    </ClCompile>
     <ClCompile Include="세밀한 동기화.cpp">
-      <Filter>실습\List</Filter>
+      <Filter>List</Filter>
     </ClCompile>
     <ClCompile Include="낙천적 동기화.cpp">
-      <Filter>실습\List</Filter>
+      <Filter>List</Filter>
+    </ClCompile>
+    <ClCompile Include="성긴 동기화.cpp">
+      <Filter>List</Filter>
+    </ClCompile>
+    <ClCompile Include="CAS Lock.cpp">
+      <Filter>Lock</Filter>
+    </ClCompile>
+    <ClCompile Include="빵집 알고리즘.cpp">
+      <Filter>Lock</Filter>
+    </ClCompile>
+    <ClCompile Include="피터슨 알고리즘.cpp">
+      <Filter>Lock</Filter>
+    </ClCompile>
+    <ClCompile Include="1억 만들기.cpp">
+      <Filter>이론 실습</Filter>
+    </ClCompile>
+    <ClCompile Include="메모리 일관성.cpp">
+      <Filter>이론 실습</Filter>
+    </ClCompile>
+    <ClCompile Include="메모리 일관성2.cpp">
+      <Filter>이론 실습</Filter>
+    </ClCompile>
+    <ClCompile Include="컴파일러.cpp">
+      <Filter>이론 실습</Filter>
+    </ClCompile>
+    <ClCompile Include="게으른 동기화.cpp">
+      <Filter>List</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="실습">
-      <UniqueIdentifier>{74008491-f5ab-4591-a5c7-002b855a6c32}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="과제">
-      <UniqueIdentifier>{08784188-ad41-438a-8378-595bbd419981}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="실습\List">
+    <Filter Include="List">
       <UniqueIdentifier>{fcaac70f-717a-4634-88a0-32ba50a7d4bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lock">
+      <UniqueIdentifier>{a12516af-eee3-459d-9c40-0f6e1c43a018}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="이론 실습">
+      <UniqueIdentifier>{2ccd0b0c-e532-4d6c-bd31-1a03a2c4acf0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

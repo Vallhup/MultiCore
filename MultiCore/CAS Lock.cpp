@@ -20,7 +20,8 @@ bool CAS(volatile bool* lock_flag, bool old_value, bool new_value)
 }
 
 volatile int sum{ 0 };
-std::atomic<bool> lock_flag{ false };
+volatile bool lock_flag{ false };
+//std::atomic<bool> lock_flag{ false };
 
 void CAS_lock()
 {
@@ -29,6 +30,7 @@ void CAS_lock()
 
 void CAS_unlock()
 {
+	std::atomic_thread_fence(std::memory_order_acquire);
 	lock_flag = false;
 }
 
