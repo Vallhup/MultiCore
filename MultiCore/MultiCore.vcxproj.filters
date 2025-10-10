@@ -34,6 +34,9 @@
     <ClCompile Include="게으른 동기화.cpp">
       <Filter>List</Filter>
     </ClCompile>
+    <ClCompile Include="비멈춤 동기화.cpp">
+      <Filter>List</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="List">

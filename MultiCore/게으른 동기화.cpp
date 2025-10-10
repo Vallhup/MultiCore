@@ -3,6 +3,7 @@
 #include <mutex>
 #include <chrono>
 #include <vector>
+#include <queue>
 
 const int MAX_THREADS{ 32 };
 
@@ -15,6 +16,36 @@ public:
 
 	NODE(int v) 
 		: next(nullptr), value(v), removed(false) {}
+
+	void lock() { mtx.lock(); }
+	void unlock() { mtx.unlock(); }
+};
+
+class NODE_SP {
+public:
+	int value;
+	volatile bool removed;
+	std::shared_ptr<NODE_SP> next;
+	std::mutex mtx;
+
+	NODE_SP(int v)
+		: next(nullptr), value(v), removed(false) {
+	}
+
+	void lock() { mtx.lock(); }
+	void unlock() { mtx.unlock(); }
+};
+
+class NODE_ATOMIC_SP {
+public:
+	int value;
+	volatile bool removed;
+	std::atomic<std::shared_ptr<NODE_ATOMIC_SP>> next;
+	std::mutex mtx;
+
+	NODE_ATOMIC_SP(int v)
+		: next(nullptr), value(v), removed(false) {
+	}
 
 	void lock() { mtx.lock(); }
 	void unlock() { mtx.unlock(); }
@@ -162,8 +193,428 @@ private:
 	NODE* tail;
 };
 
-L_SET set;
-const int LOOP = 400'0000;
+class L_SET_FL {
+public:
+	L_SET_FL()
+	{
+		head = new NODE(std::numeric_limits<int>::min());
+		tail = new NODE(std::numeric_limits<int>::max());
+		head->next = tail;
+	}
+
+	~L_SET_FL()
+	{
+		clear();
+		delete head;
+		delete tail;
+	}
+
+	void my_delete(NODE* node)
+	{
+		std::lock_guard<std::mutex> lg{ fl_mtx };
+		free_list.push(node);
+	}
+
+	void recycle()
+	{
+		while (false == free_list.empty()) {
+			auto node = free_list.front();
+			free_list.pop();
+			delete node;
+		}
+	}
+
+	void clear()
+	{
+		NODE* curr = head->next;
+
+		while (curr != tail) {
+			NODE* temp = curr;
+			curr = curr->next;
+			delete temp;
+		}
+
+		head->next = tail;
+	}
+
+	bool add(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+
+			else {
+				auto newNode = new NODE(v);
+				newNode->next = curr;
+				prev->next = newNode;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+		}
+	}
+
+	bool remove(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				curr->removed = true;
+				std::atomic_thread_fence(std::memory_order_seq_cst);
+				prev->next = curr->next;
+				my_delete(curr);
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+
+			else {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+		}
+	}
+
+	bool contains(int v)
+	{
+		NODE* curr = head;
+
+		while (curr->value < v) {
+			curr = curr->next;
+		}
+
+		return curr->value == v and not curr->removed;
+	}
+
+	void print20()
+	{
+		auto curr = head->next;
+
+		for (int i = 0; i < 20 and curr != tail; ++i) {
+			std::cout << curr->value << ", ";
+			curr = curr->next;
+		}
+		std::cout << std::endl;
+	}
+
+private:
+	bool validate(NODE* p, NODE* c)
+	{
+		return (p->removed == false)
+			and (c->removed == false)
+			and (p->next == c);
+	}
+
+private:
+	NODE* head;
+	NODE* tail;
+	std::queue<NODE*> free_list;
+	std::mutex fl_mtx;
+};
+
+class L_SET_SP {
+public:
+	L_SET_SP()
+	{
+		head = std::make_shared<NODE_SP>(std::numeric_limits<int>::min());
+		tail = std::make_shared<NODE_SP>(std::numeric_limits<int>::max());
+		head->next = tail;
+	}
+
+	~L_SET_SP() = default;
+
+	void clear()
+	{
+		head->next = tail;
+	}
+
+	bool add(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+
+			else {
+				auto newNode = std::make_shared<NODE_SP>(v);
+				newNode->next = curr;
+				prev->next = newNode;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+		}
+	}
+
+	bool remove(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next;
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				curr->removed = true;
+				std::atomic_thread_fence(std::memory_order_seq_cst);
+				prev->next = curr->next;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+
+			else {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+		}
+	}
+
+	bool contains(int v)
+	{
+		auto curr = head->next;
+
+		while (curr->value < v) {
+			curr = curr->next;
+		}
+
+		return curr->value == v and not curr->removed;
+	}
+
+	void print20()
+	{
+		auto curr = head->next;
+
+		for (int i = 0; i < 20 and curr != tail; ++i) {
+			std::cout << curr->value << ", ";
+			curr = curr->next;
+		}
+		std::cout << std::endl;
+	}
+
+private:
+	bool validate(const std::shared_ptr<NODE_SP>& p, 
+		const std::shared_ptr<NODE_SP>& c)
+	{
+		return (p->removed == false)
+			and (c->removed == false)
+			and (p->next == c);
+	}
+
+private:
+	std::shared_ptr<NODE_SP> head;
+	std::shared_ptr<NODE_SP> tail;
+};
+
+class L_SET_ATOMIC_SP {
+public:
+	L_SET_ATOMIC_SP()
+	{
+		head = std::make_shared<NODE_ATOMIC_SP>(std::numeric_limits<int>::min());
+		tail = std::make_shared<NODE_ATOMIC_SP>(std::numeric_limits<int>::max());
+		head->next = tail;
+	}
+
+	~L_SET_ATOMIC_SP() = default;
+
+	void clear()
+	{
+		head->next = tail;
+	}
+
+	bool add(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next.load();
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+
+			else {
+				auto newNode = std::make_shared<NODE_ATOMIC_SP>(v);
+				newNode->next = curr;
+				prev->next = newNode;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+		}
+	}
+
+	bool remove(int v)
+	{
+		while (true) {
+			auto prev = head;
+			auto curr = prev->next.load();
+
+			while (curr->value < v) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				continue;
+			}
+
+			if (curr->value == v) {
+				curr->removed = true;
+				std::atomic_thread_fence(std::memory_order_seq_cst);
+				prev->next = curr->next.load();
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+
+			else {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+		}
+	}
+
+	bool contains(int v)
+	{
+		auto curr = head->next.load();
+
+		while (curr->value < v) {
+			curr = curr->next;
+		}
+
+		return curr->value == v and not curr->removed;
+	}
+
+	void print20()
+	{
+		auto curr = head->next.load();
+
+		for (int i = 0; i < 20 and curr != tail; ++i) {
+			std::cout << curr->value << ", ";
+			curr = curr->next;
+		}
+		std::cout << std::endl;
+	}
+
+private:
+	bool validate(const std::shared_ptr<NODE_ATOMIC_SP>& p,
+		const std::shared_ptr<NODE_ATOMIC_SP>& c)
+	{
+		return (p->removed == false)
+			and (c->removed == false)
+			and (p->next.load() == c);
+	}
+
+private:
+	std::shared_ptr<NODE_ATOMIC_SP> head;
+	std::shared_ptr<NODE_ATOMIC_SP> tail;
+};
+
+L_SET_ATOMIC_SP set;
+const int LOOP = 4'000'000;
 const int RANGE = 1000;
 
 #include <array>
