@@ -613,7 +613,7 @@ private:
 	std::shared_ptr<NODE_ATOMIC_SP> tail;
 };
 
-L_SET_ATOMIC_SP set;
+L_SET set;
 const int LOOP = 4'000'000;
 const int RANGE = 1000;
 
